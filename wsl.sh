@@ -140,15 +140,52 @@ if [ ! -f "./main.py" ]; then
     git branch --set-upstream-to=origin/v2.5.1
 fi
 
-# ── Install if first run or called with 'wsl.sh install' ─────────────────────
+# ── Install if called with 'wsl.sh install' ──────────────────────────────────
 case "$1" in
 ("install")
-    echo "[1/5] Installing PyTorch (CUDA 12.1)..."
+    echo "[1/5] Selecting PyTorch backend..."
+    echo
+    echo "=============================================================="
+    echo "  Please select PyTorch installation:"
+    echo "  [1] NVIDIA — CUDA 12.1 (torch 2.7.0 + xformers)"
+    echo "  [2] NVIDIA — CUDA 12.8+ (torch 2.10.0)"
+    echo "  [3] AMD ROCm 6.1 (torch 2.7.0)"
+    echo "  [4] Intel Arc GPU (via IPEX)"
+    echo "  [5] CPU only"
+    echo "=============================================================="
+    read -r -p "  Enter choice (1-5): " GPU_CHOICE
 
     python -m pip install --upgrade pip setuptools wheel
 
-    pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu121
-    pip install --no-cache-dir xformers==0.0.30 --index-url https://download.pytorch.org/whl/cu121
+    case "$GPU_CHOICE" in
+        1)
+            echo "  Installing PyTorch with CUDA 12.1..."
+            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu121
+            pip install --no-cache-dir xformers==0.0.30 --index-url https://download.pytorch.org/whl/cu121
+            ;;
+        2)
+            echo "  Installing PyTorch with CUDA 12.8+..."
+            pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+            ;;
+        3)
+            echo "  Installing PyTorch with ROCm 6.1..."
+            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/rocm6.1
+            ;;
+        4)
+            echo "  Installing PyTorch with Intel Arc (IPEX)..."
+            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cpu
+            pip install --no-cache-dir --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
+                intel-extension-for-pytorch==2.7.10+xpu oneccl_bind_pt==2.7.0+xpu
+            ;;
+        5)
+            echo "  Installing PyTorch CPU..."
+            pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
+            ;;
+        *)
+            echo "Invalid choice."
+            exit 1
+            ;;
+    esac
 
     echo "[2/5] Installing core dependencies..."
     pip install --no-cache-dir --force-reinstall numpy==1.26.4
@@ -158,7 +195,8 @@ case "$1" in
     pip install --no-cache-dir ddgs pypdf python-docx
     pip install --no-cache-dir discord.py PyNaCl davey
     pip install --no-cache-dir pypresence
-    pip install --no-cache-dir pyautogui playwright && playwright install chromium
+    pip install --no-cache-dir pyautogui playwright
+    playwright install chromium
     pip install --no-cache-dir sentence-transformers==5.1.0
     pip install --no-cache-dir openai==1.70.0 mistralai==1.5.0
     pip install --no-cache-dir edge-tts==7.2.7 elevenlabs==1.52.0 kokoro==0.9.4
@@ -184,7 +222,13 @@ case "$1" in
     echo "  Installing RVC support dependencies..."
     pip install --no-cache-dir pyworld torchcrepe uvicorn omegaconf==2.3.0
 
-    echo "  Skipping torchcodec — not compatible with torch 2.7.0"
+    # torchcodec: not compatible with torch 2.7.x or Intel Arc
+    TORCH_VER=$(python -c "import torch; print(torch.__version__)" 2>/dev/null || echo "")
+    if [[ "$TORCH_VER" == 2.7.* ]] || [[ "$GPU_CHOICE" == "4" ]]; then
+        echo "  Skipping torchcodec — not compatible with this configuration"
+    else
+        pip install --no-cache-dir --force-reinstall torchcodec==0.10.0
+    fi
 
     echo "[3/5] Final checks..."
     python -m pip check || echo "WARNING: pip check found issues"
@@ -219,7 +263,18 @@ if [ "$1" != "install" ]; then
     echo -e "${C_DIM}  ──────────────────────────────────────────────────────────────────────────────────────────${C_RESET}"
     echo
     echo -e "  ${C_MINT}✓${C_RESET} Environment loaded: ${C_PURPLE}$(python --version) / $(python -c 'import torch; print(f"PyTorch {torch.__version__}")')${C_RESET}"
-    echo -e "  ${C_DIM}GPU:${C_RESET} ${C_DIM}$(python -c "import torch; print('CUDA ✓' if torch.cuda.is_available() else 'CPU only')")${C_RESET}"
+    GPU_INFO=$(python -c "
+import torch
+if torch.cuda.is_available():
+    print(f'CUDA {torch.version.cuda} — {torch.cuda.get_device_name(0)}')
+elif hasattr(torch, 'xpu') and torch.xpu.is_available():
+    print(f'Intel XPU — {torch.xpu.get_device_name(0)}')
+elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    print('Metal/MPS')
+else:
+    print('CPU only')
+" 2>/dev/null || echo "unknown")
+    echo -e "  ${C_DIM}GPU:${C_RESET} ${C_DIM}${GPU_INFO}${C_RESET}"
     echo
     echo -e "${C_DIM}  ──────────────────────────────────────────────────────────────────────────────────────────${C_RESET}"
     echo

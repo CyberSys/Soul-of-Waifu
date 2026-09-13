@@ -27,7 +27,23 @@ echo "[1/6] Checking system dependencies..."
 check_system_pkg() {
     local pkg="$1"
     local install_hint="$2"
-    if ! command -v "$pkg" &>/dev/null && ! dpkg -s "$pkg" &>/dev/null 2>&1 && ! rpm -q "$pkg" &>/dev/null 2>&1; then
+    local found=0
+    # check if package is installed via dpkg/rpm
+    if dpkg -s "$pkg" &>/dev/null 2>&1 || rpm -q "$pkg" &>/dev/null 2>&1; then
+        found=1
+    fi
+    # check if binary exists in PATH (for tools like gcc, cmake, ffmpeg)
+    if command -v "$pkg" &>/dev/null; then
+        found=1
+    fi
+    # for -dev packages, also check if the .pc file or header exists
+    if [[ "$pkg" == *-dev ]] && [ -d "/usr/include" ]; then
+        local short="${pkg%-dev}"
+        if dpkg -L "$pkg" 2>/dev/null | grep -q '\.h$' 2>/dev/null; then
+            found=1
+        fi
+    fi
+    if [ "$found" -eq 0 ]; then
         echo "  WARNING: $pkg not found. $install_hint"
         return 1
     fi
@@ -35,12 +51,12 @@ check_system_pkg() {
 }
 
 MISSING=0
-check_system_pkg "gcc"          "Install: sudo apt install build-essential" || MISSING=1
-check_system_pkg "g++"          "Install: sudo apt install build-essential" || MISSING=1
-check_system_pkg "cmake"        "Install: sudo apt install cmake" || true
+check_system_pkg "gcc"            "Install: sudo apt install build-essential" || MISSING=1
+check_system_pkg "g++"            "Install: sudo apt install build-essential" || MISSING=1
+check_system_pkg "cmake"          "Install: sudo apt install cmake (optional)" || true
 check_system_pkg "libasound2-dev" "Install: sudo apt install libasound2-dev (required for sounddevice)" || MISSING=1
 check_system_pkg "portaudio19-dev" "Install: sudo apt install portaudio19-dev (required for PyAudio)" || MISSING=1
-check_system_pkg "ffmpeg"       "Install: sudo apt install ffmpeg" || MISSING=1
+check_system_pkg "ffmpeg"         "Install: sudo apt install ffmpeg" || MISSING=1
 
 if [ "$MISSING" -eq 1 ]; then
     echo
@@ -109,9 +125,11 @@ echo "  Please select PyTorch installation:"
 echo "  [1] NVIDIA — CUDA 12.1 (torch 2.7.0 + xformers)"
 echo "  [2] NVIDIA — CUDA 12.8+ (torch 2.10.0)"
 echo "  [3] AMD ROCm 6.1 (torch 2.7.0)"
-echo "  [4] CPU only"
+echo "  [4] Intel Arc GPU (via IPEX)"
+echo "  [5] Vulkan (via mesa-vulkan + llama.cpp)"
+echo "  [6] CPU only"
 echo "=============================================================="
-read -r -p "  Enter choice (1-4): " CHOICE
+read -r -p "  Enter choice (1-6): " CHOICE
 
 python -m pip install --upgrade pip setuptools wheel
 
@@ -131,6 +149,21 @@ case "$CHOICE" in
         pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/rocm6.1
         ;;
     4)
+        echo "  Installing PyTorch with Intel Arc (IPEX) support..."
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cpu
+        pip install --no-cache-dir --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
+            intel-extension-for-pytorch==2.7.10+xpu oneccl_bind_pt==2.7.0+xpu
+        echo "  Installing oneAPI runtime via conda..."
+        "$CONDA_ROOT_PREFIX/bin/conda" install -y -c https://software.repos.intel.com/python/conda/ -c conda-forge \
+            dpcpp-cpp-rt=2025.0 mkl-dpcpp=2025.0 || echo "  WARNING: oneAPI conda install failed — install manually if needed"
+        ;;
+    5)
+        echo "  Installing PyTorch CPU (Vulkan via system mesa-vulkan-drivers)..."
+        pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
+        echo "  NOTE: Ensure vulkan-tools is installed: sudo apt install vulkan-tools"
+        echo "  Run 'vulkaninfo' to verify Vulkan detection."
+        ;;
+    6)
         echo "  Installing PyTorch CPU..."
         pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
         ;;
@@ -150,7 +183,8 @@ pip install --no-cache-dir beautifulsoup4 mss
 pip install --no-cache-dir ddgs pypdf python-docx
 pip install --no-cache-dir discord.py PyNaCl davey
 pip install --no-cache-dir pypresence
-pip install --no-cache-dir pyautogui playwright && playwright install chromium
+pip install --no-cache-dir pyautogui playwright
+playwright install chromium
 pip install --no-cache-dir sentence-transformers==5.1.0
 pip install --no-cache-dir openai==1.70.0 mistralai==1.5.0
 pip install --no-cache-dir edge-tts==7.2.7 elevenlabs==1.52.0 kokoro==0.9.4
@@ -176,10 +210,12 @@ pip install --no-cache-dir coqui-tts[codec]
 echo "  Installing RVC support dependencies..."
 pip install --no-cache-dir pyworld torchcrepe uvicorn omegaconf==2.3.0
 
-# torchcodec conditional: not compatible with torch 2.7.0
+# torchcodec: not compatible with torch 2.7.x or Intel Arc builds
 TORCH_VER=$(python -c "import torch; print(torch.__version__)" 2>/dev/null || echo "")
 if [[ "$TORCH_VER" == 2.7.* ]]; then
     echo "  Skipping torchcodec — not compatible with torch 2.7.0"
+elif [[ "$CHOICE" == "4" ]]; then
+    echo "  Skipping torchcodec — not compatible with Intel Arc IPEX"
 else
     pip install --no-cache-dir --force-reinstall torchcodec==0.10.0
 fi
@@ -192,6 +228,19 @@ python -m pip check || echo "WARNING: pip check found issues (RVC/Coqui may have
 echo "  Smoke test (basic imports)..."
 python -c "import torch, numpy, transformers, PyQt6; print('  Core imports OK')"
 python -c "from TTS.api import TTS; print('  Coqui TTS import OK')" || echo "  WARNING: Coqui TTS import failed — possible version conflict!"
+
+# GPU detection
+python -c "
+import torch
+if torch.cuda.is_available():
+    print(f'  GPU: CUDA {torch.version.cuda} — {torch.cuda.get_device_name(0)}')
+elif hasattr(torch, 'xpu') and torch.xpu.is_available():
+    print(f'  GPU: Intel XPU — {torch.xpu.get_device_name(0)}')
+elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    print('  GPU: Metal/MPS')
+else:
+    print('  GPU: CPU only')
+" 2>/dev/null || true
 
 echo
 echo "=============================================="

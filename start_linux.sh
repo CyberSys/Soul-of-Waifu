@@ -91,7 +91,19 @@ export LD_LIBRARY_PATH="$INSTALL_ENV_DIR/lib:$INSTALL_ENV_DIR/lib64:${LD_LIBRARY
 source "$CONDA_ROOT_PREFIX/etc/profile.d/conda.sh"
 conda activate "$INSTALL_ENV_DIR"
 
+GPU_INFO=$(python -c "
+import torch
+if torch.cuda.is_available():
+    print(f'CUDA {torch.version.cuda} — {torch.cuda.get_device_name(0)}')
+elif hasattr(torch, 'xpu') and torch.xpu.is_available():
+    print(f'Intel XPU — {torch.xpu.get_device_name(0)}')
+elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    print('Metal/MPS')
+else:
+    print('CPU only')
+" 2>/dev/null || echo "unknown")
 echo -e "        ${C_MINT}✓${C_RESET} Environment loaded: ${C_PURPLE}$(python --version) / $(python -c 'import torch; print(f"PyTorch {torch.__version__}")')${C_RESET}"
+echo -e "        ${C_DIM}GPU:${C_RESET} ${C_DIM}${GPU_INFO}${C_RESET}"
 echo
 
 # ── [4/4] Launch ─────────────────────────────────────────────────────────────

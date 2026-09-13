@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Soul of Waifu v2.5.1 — macOS Installer
-# Usage: bash installer.sh
+# Usage: bash installer_macos.sh
 #
 
 set -euo pipefail
@@ -23,6 +23,16 @@ echo
 
 # ── Step [1/6] System dependencies ──────────────────────────────────────────
 echo "[1/6] Checking system dependencies..."
+
+# Detect architecture
+OS_ARCH="$(uname -m)"
+if [ "$OS_ARCH" = "arm64" ]; then
+    echo "  Detected: Apple Silicon (arm64)"
+    HAS_MPS=1
+else
+    echo "  Detected: Intel (x86_64)"
+    HAS_MPS=0
+fi
 
 # Check for Homebrew
 if ! command -v brew &>/dev/null; then
@@ -62,7 +72,6 @@ INSTALL_DIR="$(pwd)/installer_files"
 CONDA_ROOT_PREFIX="$(pwd)/installer_files/conda"
 INSTALL_ENV_DIR="$(pwd)/installer_files/env"
 
-OS_ARCH="$(uname -m)"
 MINICONDA_DOWNLOAD_URL="https://repo.anaconda.com/miniconda/Miniconda3-py311_24.11.1-0-MacOSX-${OS_ARCH}.sh"
 conda_exists="F"
 
@@ -104,14 +113,39 @@ conda activate "$INSTALL_ENV_DIR"
 echo "  Python version: $(python --version)"
 
 # ── Step [4/6] Install PyTorch ───────────────────────────────────────────────
-echo "[4/6] Installing PyTorch (CPU + Metal/MPS)..."
+echo "[4/6] Installing PyTorch..."
+echo
+echo "=============================================================="
+echo "  Please select PyTorch installation:"
+if [ "$HAS_MPS" -eq 1 ]; then
+    echo "  [1] Apple Silicon — MPS GPU acceleration (recommended)"
+fi
+echo "  [2] CPU only (Intel x86_64 Macs or fallback)"
+echo "=============================================================="
+if [ "$HAS_MPS" -eq 1 ]; then
+    read -r -p "  Enter choice (1-2): " CHOICE
+else
+    CHOICE="2"
+    echo "  Intel Mac detected — using CPU-only PyTorch."
+    echo "  (MPS is only available on Apple Silicon)"
+fi
 
 python -m pip install --upgrade pip setuptools wheel
 
-echo "  Installing PyTorch for macOS (MPS support)..."
-pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
-
-echo "  PyTorch installed — Metal Performance Shaders (MPS) available on Apple Silicon"
+case "$CHOICE" in
+    1)
+        echo "  Installing PyTorch for macOS with MPS support..."
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
+        ;;
+    2)
+        echo "  Installing PyTorch CPU..."
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
+        ;;
+    *)
+        echo "Invalid choice."
+        exit 1
+        ;;
+esac
 
 # ── Step [5/6] Install dependencies ──────────────────────────────────────────
 echo "[5/6] Installing application dependencies..."
@@ -123,7 +157,8 @@ pip install --no-cache-dir beautifulsoup4 mss
 pip install --no-cache-dir ddgs pypdf python-docx
 pip install --no-cache-dir discord.py PyNaCl davey
 pip install --no-cache-dir pypresence
-pip install --no-cache-dir pyautogui playwright && playwright install chromium
+pip install --no-cache-dir pyautogui playwright
+playwright install chromium
 pip install --no-cache-dir sentence-transformers==5.1.0
 pip install --no-cache-dir openai==1.70.0 mistralai==1.5.0
 pip install --no-cache-dir edge-tts==7.2.7 elevenlabs==1.52.0 kokoro==0.9.4
@@ -164,7 +199,7 @@ python -c "from TTS.api import TTS; print('  Coqui TTS import OK')" || echo "  W
 # Check MPS availability on Apple Silicon
 python -c "
 import torch
-if torch.backends.mps.is_available():
+if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
     print('  ✓ Metal Performance Shaders (MPS) available — GPU acceleration enabled')
 else:
     print('  ⚠ MPS not available — running on CPU only')

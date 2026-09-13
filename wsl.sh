@@ -108,7 +108,7 @@ if [ "$conda_exists" == "F" ]; then
     curl -L "$MINICONDA_DOWNLOAD_URL" > "$INSTALL_DIR/miniconda_installer.sh"
 
     chmod u+x "$INSTALL_DIR/miniconda_installer.sh"
-    bash "$INSTALL_DIR/miniconda_installer.sh" -b -p $CONDA_ROOT_PREFIX
+    bash "$INSTALL_DIR/miniconda_installer.sh" -b -p "$CONDA_ROOT_PREFIX"
 
     echo "  Miniconda version: $("$CONDA_ROOT_PREFIX/bin/conda" --version)"
     rm "$INSTALL_DIR/miniconda_installer.sh"
@@ -133,11 +133,11 @@ pushd "$INSTALL_DIR" 1>/dev/null || exit
 
 if [ ! -f "./main.py" ]; then
     echo "  Cloning Soul-of-Waifu repository..."
-    git init -b v2.5.1
+    git init -b v2.5.1_wsl
     git remote add origin https://github.com/CyberSys/Soul-of-Waifu.git
-    git fetch origin v2.5.1
-    git reset origin/v2.5.1 --hard
-    git branch --set-upstream-to=origin/v2.5.1
+    git fetch origin v2.5.1_wsl
+    git reset origin/v2.5.1_wsl --hard
+    git branch --set-upstream-to=origin/v2.5.1_wsl
 fi
 
 # ── Install if called with 'wsl.sh install' ──────────────────────────────────

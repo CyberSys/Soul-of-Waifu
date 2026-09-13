@@ -69,7 +69,8 @@ pip install --no-cache-dir beautifulsoup4 mss
 pip install --no-cache-dir ddgs pypdf python-docx
 pip install --no-cache-dir discord.py PyNaCl davey
 pip install --no-cache-dir pypresence
-pip install --no-cache-dir pyautogui playwright && playwright install chromium
+pip install --no-cache-dir pyautogui playwright
+playwright install chromium
 pip install --no-cache-dir sentence-transformers==5.1.0
 pip install --no-cache-dir openai==1.70.0 mistralai==1.5.0
 pip install --no-cache-dir edge-tts==7.2.7 elevenlabs==1.52.0 kokoro==0.9.4
@@ -95,6 +96,8 @@ pip install --no-cache-dir coqui-tts[codec]
 echo Installing RVC support dependencies...
 pip install --no-cache-dir pyworld torchcrepe uvicorn omegaconf==2.3.0
 if "%choice%"=="2" (
+    echo Skipping torchcodec - not compatible with torch 2.7.0
+) else if "%choice%"=="3" (
     echo Skipping torchcodec - not compatible with torch 2.7.0
 ) else (
     pip install --no-cache-dir --force-reinstall torchcodec==0.10.0

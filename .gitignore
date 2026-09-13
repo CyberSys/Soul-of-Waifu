@@ -1,0 +1,60 @@
+# ============================================
+# Soul of Waifu v2.5.1 - .gitignore
+# ============================================
+
+# --- Python / Virtual Environment ---
+app/data/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Runtime Cache ---
+app/cache/
+app/voices/edge_tts_audio/
+app/voices/elevenlabs_audio/
+app/voices/kokoro_audio/
+app/voices/qwen_audio/
+app/voices/silero_audio/
+app/voices/xttsv2_audio/
+
+# --- User Data ---
+app/configuration/characters/
+!app/configuration/characters/.gitkeep
+
+# --- Native Binaries (llama.cpp, FFmpeg) ---
+app/utils/ai_clients/backend/cpu/
+app/utils/ai_clients/backend/cuda/
+app/utils/ai_clients/backend/vulkan/
+app/utils/ai_clients/backend/_temp/
+app/ffmpeg/bin/
+
+# --- Obfuscated Data ---
+app/utils/ai_clients/9b5ad71b2*
+
+# --- ML Models (managed by assets submodule) ---
+app/utils/e5-small-en-ru/
+app/utils/emotions/detector/
+app/utils/speech-to-text/silero-vad/src/silero_vad/data/
+
+# --- Assets content (managed by submodule, .gitmodules handles this) ---
+# Note: assets/ is a git submodule - not ignored
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

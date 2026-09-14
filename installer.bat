@@ -38,22 +38,22 @@ python -m pip install --upgrade pip setuptools wheel
 echo.
 echo ==============================================================
 echo Please select PyTorch installation:
-echo [1] CUDA (cu128) - For CUDA 12.8+ GPU (torch 2.10.0)
-echo [2] CUDA (cu121) - For CUDA 12.1 GPU (torch 2.7.0 + xformers)
+echo [1] CUDA (cu128) - For CUDA 12.8+ GPU (torch 2.7.0 + xformers)
+echo [2] CUDA (cu121) - For CUDA 12.1 GPU (torch 2.5.1 + xformers)
 echo [3] CPU only
 echo ==============================================================
 set /p choice="Enter choice (1, 2 or 3): "
 if "%choice%"=="1" (
     echo Installing PyTorch with CUDA 12.8+ support...
-    pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+    pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
 ) else if "%choice%"=="2" (
     echo Installing PyTorch with CUDA 12.1 support...
-    pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu121
+    pip install --no-cache-dir torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
     echo Installing xformers for CUDA 12.1...
-    pip install --no-cache-dir xformers==0.0.30 --index-url https://download.pytorch.org/whl/cu121
+    pip install --no-cache-dir xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu121
 ) else if "%choice%"=="3" (
     echo Installing PyTorch CPU...
-    pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
+    pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
 ) else (
     echo Invalid choice.
     pause
@@ -96,11 +96,9 @@ pip install --no-cache-dir coqui-tts[codec]
 echo Installing RVC support dependencies...
 pip install --no-cache-dir pyworld torchcrepe uvicorn omegaconf==2.3.0
 if "%choice%"=="2" (
-    echo Skipping torchcodec - not compatible with torch 2.7.0
-) else if "%choice%"=="3" (
-    echo Skipping torchcodec - not compatible with torch 2.7.0
-) else (
     pip install --no-cache-dir --force-reinstall torchcodec==0.10.0
+) else (
+    echo Skipping torchcodec - not compatible with torch 2.7.0
 )
 
 echo [5/6] Final checks...

@@ -182,7 +182,6 @@ python-docx==1.2.0
 python-multipart==0.0.32
 pytweening==1.2.0
 pytz==2026.3.post1
-pywin32==312
 pyworld==0.3.5
 PyYAML==6.0.2
 qasync==0.27.1
@@ -259,6 +258,5 @@ wcwidth==0.8.2
 weasel==1.0.0
 websockets==17.0.1
 Werkzeug==3.1.8
-win32_setctime==1.2.0
 wrapt==2.3.0
 yarl==1.24.5

@@ -1,5 +1,6 @@
-# Soul of Waifu v2.5.1 — Linux Requirements (CUDA 12.1 / CPU)
-# Based on requirements-nvidia-cu121.txt
+# Soul of Waifu v2.5.1 — Linux Requirements (CUDA 12.8+ base)
+# Install PyTorch from: https://download.pytorch.org/whl/cu128
+# torch==2.7.0, torchvision==0.22.0, torchaudio==2.7.0, xformers==0.0.30
 # Remove pywin32/win32_setctime (Windows-only); add Linux notes.
 
 # === SYSTEM DEPENDENCIES (install via apt) ===

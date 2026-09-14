@@ -122,7 +122,7 @@ echo "[4/6] Installing PyTorch..."
 echo
 echo "=============================================================="
 echo "  Please select PyTorch installation:"
-echo "  [1] NVIDIA — CUDA 12.1 (torch 2.7.0 + xformers)"
+echo "  [1] NVIDIA — CUDA 12.1 (torch 2.5.1 + xformers)"
 echo "  [2] NVIDIA — CUDA 12.8+ (torch 2.10.0)"
 echo "  [3] AMD ROCm 6.1 (torch 2.7.0)"
 echo "  [4] Intel Arc GPU (via IPEX)"
@@ -136,17 +136,18 @@ python -m pip install --upgrade pip setuptools wheel
 case "$CHOICE" in
     1)
         echo "  Installing PyTorch with CUDA 12.1 support..."
-        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu121
+        pip install --no-cache-dir torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
         echo "  Installing xformers for CUDA 12.1..."
-        pip install --no-cache-dir xformers==0.0.30 --index-url https://download.pytorch.org/whl/cu121
+        pip install --no-cache-dir xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu121
         ;;
     2)
         echo "  Installing PyTorch with CUDA 12.8+ support..."
-        pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
         ;;
     3)
         echo "  Installing PyTorch with ROCm 6.1 support..."
-        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/rocm6.1
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
+        echo "  NOTE: For native ROCm, install torch from: https://download.pytorch.org/whl/rocm6.1"
         ;;
     4)
         echo "  Installing PyTorch with Intel Arc (IPEX) support..."
@@ -159,13 +160,13 @@ case "$CHOICE" in
         ;;
     5)
         echo "  Installing PyTorch CPU (Vulkan via system mesa-vulkan-drivers)..."
-        pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
         echo "  NOTE: Ensure vulkan-tools is installed: sudo apt install vulkan-tools"
         echo "  Run 'vulkaninfo' to verify Vulkan detection."
         ;;
     6)
         echo "  Installing PyTorch CPU..."
-        pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
+        pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
         ;;
     *)
         echo "Invalid choice."

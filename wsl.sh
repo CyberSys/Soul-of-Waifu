@@ -147,7 +147,7 @@ case "$1" in
     echo
     echo "=============================================================="
     echo "  Please select PyTorch installation:"
-    echo "  [1] NVIDIA — CUDA 12.1 (torch 2.7.0 + xformers)"
+    echo "  [1] NVIDIA — CUDA 12.1 (torch 2.5.1 + xformers)"
     echo "  [2] NVIDIA — CUDA 12.8+ (torch 2.10.0)"
     echo "  [3] AMD ROCm 6.1 (torch 2.7.0)"
     echo "  [4] Intel Arc GPU (via IPEX)"
@@ -160,16 +160,17 @@ case "$1" in
     case "$GPU_CHOICE" in
         1)
             echo "  Installing PyTorch with CUDA 12.1..."
-            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu121
-            pip install --no-cache-dir xformers==0.0.30 --index-url https://download.pytorch.org/whl/cu121
+            pip install --no-cache-dir torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+            pip install --no-cache-dir xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu121
             ;;
         2)
             echo "  Installing PyTorch with CUDA 12.8+..."
-            pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
             ;;
         3)
             echo "  Installing PyTorch with ROCm 6.1..."
-            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/rocm6.1
+            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
+            echo "  NOTE: For native ROCm, install torch from: https://download.pytorch.org/whl/rocm6.1"
             ;;
         4)
             echo "  Installing PyTorch with Intel Arc (IPEX)..."
@@ -179,7 +180,7 @@ case "$1" in
             ;;
         5)
             echo "  Installing PyTorch CPU..."
-            pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0
+            pip install --no-cache-dir torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
             ;;
         *)
             echo "Invalid choice."
